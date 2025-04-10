@@ -1,0 +1,128 @@
+Backend Midterm – Variant 1 – Film Search API with Pagination
+
+Task:
+Write an API to search films with title using a LIKE query.
+Return: film title, release year, category title.
+Add pagination support.
+
+Steps:
+
+1. Entity (Film.java, Category.java)
+Ensure these entities exist in ge.ibsu.demo.entities. If not, create them like so:
+
+@Entity
+public class Film {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String title;
+    private int releaseYear;
+
+    @ManyToOne
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    // getters and setters
+}
+
+@Entity
+public class Category {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+    private String title;
+
+    // getters and setters
+}
+
+2. DTO for returning only required fields (FilmDTO.java)
+---------------------------------------------------------
+package ge.ibsu.demo.dto;
+
+public class FilmDTO {
+    private String title;
+    private int releaseYear;
+    private String categoryTitle;
+
+    public FilmDTO(String title, int releaseYear, String categoryTitle) {
+        this.title = title;
+        this.releaseYear = releaseYear;
+        this.categoryTitle = categoryTitle;
+    }
+
+    // getters
+}
+
+3. Repository (FilmRepository.java)
+-----------------------------------
+package ge.ibsu.demo.repositories;
+
+import ge.ibsu.demo.entities.Film;
+import ge.ibsu.demo.dto.FilmDTO;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface FilmRepository extends JpaRepository<Film, Long> {
+
+    @Query("SELECT new ge.ibsu.demo.dto.FilmDTO(f.title, f.releaseYear, f.category.title) " +
+           "FROM Film f WHERE LOWER(f.title) LIKE LOWER(CONCAT('%', :title, '%'))")
+    Page<FilmDTO> searchByTitle(@Param("title") String title, Pageable pageable);
+}
+
+4. Service (FilmService.java)
+-----------------------------
+package ge.ibsu.demo.services;
+
+import ge.ibsu.demo.dto.FilmDTO;
+import ge.ibsu.demo.repositories.FilmRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+
+@Service
+public class FilmService {
+    @Autowired
+    private FilmRepository repository;
+
+    public Page<FilmDTO> search(String title, Pageable pageable) {
+        return repository.searchByTitle(title, pageable);
+    }
+}
+
+5. Controller (FilmController.java)
+-----------------------------------
+package ge.ibsu.demo.controllers;
+
+import ge.ibsu.demo.dto.FilmDTO;
+import ge.ibsu.demo.services.FilmService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/films")
+public class FilmController {
+
+    @Autowired
+    private FilmService service;
+
+    @GetMapping("/search")
+    public Page<FilmDTO> search(
+        @RequestParam(defaultValue = "") String title,
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size
+    ) {
+        return service.search(title, PageRequest.of(page, size));
+    }
+}
+
+6. Test Endpoint:
+-----------------
+GET /api/films/search?title=king&page=0&size=5
+Returns: Film title, release year, category title with pagination
