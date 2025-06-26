@@ -1,0 +1,887 @@
+1. Describe what is Promise in JS? (4)
+
+A Promise in JavaScript is an object representing the eventual completion or failure of an asynchronous operation and its resulting value. It serves as a placeholder for a value that may not be available yet. Promises have three distinct states:
+- Pending: Initial state, neither fulfilled nor rejected
+- Fulfilled: The operation completed successfully, and the promise has a resulting value
+- Rejected: The operation failed, and the promise has a reason for the failure
+
+Promises provide methods like .then() for handling successful outcomes and .catch() for handling errors. They solve the "callback hell" problem by allowing chaining of asynchronous operations in a more readable and manageable way. The Promise API also includes useful static methods like Promise.all(), Promise.race(), Promise.resolve(), and Promise.reject().
+
+2. Describe closure event in JS? (2)
+
+A closure in JavaScript (not an "event" per se) is a function that has access to its own scope, the outer function's scope, and the global scope, even after the outer function has finished executing. It "closes over" the variables from its outer scope.
+
+Closures are formed when a function is defined within another function and the inner function references variables from the outer function. This creates a persistent scope that remains accessible to the inner function even after the outer function has completed execution. Closures are commonly used to create private variables, implement data encapsulation, and maintain state across function calls.
+
+3. Write the function which checks If two strings are anagrams? (4)
+
+function areAnagrams(str1, str2) {
+  // Remove non-alphanumeric characters and convert to lowercase
+  const cleanStr1 = str1.replace(/[^\w]/g, '').toLowerCase();
+  const cleanStr2 = str2.replace(/[^\w]/g, '').toLowerCase();
+  
+  // Check if lengths are different
+  if (cleanStr1.length !== cleanStr2.length) {
+    return false;
+  }
+  
+  // Sort both strings and compare
+  const sortedStr1 = cleanStr1.split('').sort().join('');
+  const sortedStr2 = cleanStr2.split('').sort().join('');
+  
+  return sortedStr1 === sortedStr2;
+}
+
+// Alternative character counting approach
+function areAnagramsAlt(str1, str2) {
+  // Remove non-alphanumeric characters and convert to lowercase
+  const cleanStr1 = str1.replace(/[^\w]/g, '').toLowerCase();
+  const cleanStr2 = str2.replace(/[^\w]/g, '').toLowerCase();
+  
+  // Check if lengths are different
+  if (cleanStr1.length !== cleanStr2.length) {
+    return false;
+  }
+  
+  // Create character frequency map
+  const charCount = {};
+  
+  // Count characters in first string
+  for (let char of cleanStr1) {
+    charCount[char] = (charCount[char] || 0) + 1;
+  }
+  
+  // Decrement count for second string
+  for (let char of cleanStr2) {
+    if (!charCount[char]) {
+      return false;
+    }
+    charCount[char]--;
+  }
+  
+  return true;
+}
+
+4. What is the output of the following code? (4)
+
+const b = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
+for (let i = 0; i < 10; i++) {
+  setTimeout(() => console.log(b[i]), 1000);
+}
+
+for (var i = 0; i < 10; i++) {
+  setTimeout(() => console.log(b[i]), 1000);
+}
+
+Output:
+The first loop (using let) will output:
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+
+The second loop (using var) will output:
+undefined
+undefined
+undefined
+undefined
+undefined
+undefined
+undefined
+undefined
+undefined
+undefined
+
+Explanation:
+- In the first loop, 'let' creates a block-scoped variable for each iteration. Each callback function captures its own instance of 'i', preserving the value it had in that particular iteration.
+- In the second loop, 'var' is function-scoped, not block-scoped. By the time the setTimeout callbacks execute (after 1000ms), the loop has completed and 'i' has the value 10. Since b[10] doesn't exist (array indices are 0-9), it outputs undefined ten times.
+
+5. What will the code below output to the console and why? (4)
+
+var myObject = {
+    foo: "bar",
+    func: function() {
+        var self = this;
+        console.log("outer func:  this.foo = " + this.foo);
+        console.log("outer func:  self.foo = " + self.foo);
+        (function() {
+            console.log("inner func:  this.foo = " + this.foo);
+            console.log("inner func:  self.foo = " + self.foo);
+         }());
+       }
+ };
+myObject.func();
+
+Output:
+outer func:  this.foo = bar
+outer func:  self.foo = bar
+inner func:  this.foo = undefined
+inner func:  self.foo = bar
+
+Explanation:
+- In the outer function, 'this' refers to myObject because func() is called as a method of myObject. Therefore, this.foo is "bar".
+- self = this creates a reference to myObject, so self.foo is also "bar".
+- The inner function is an IIFE (Immediately Invoked Function Expression) and creates its own execution context. Inside this function, 'this' refers to the global object (window in browsers, global in Node.js), which doesn't have a 'foo' property, so this.foo is undefined.
+- However, 'self' remains in scope from the outer function due to closure, still referencing myObject, so self.foo is still "bar".
+
+6. Write a JavaScript function that takes an array of URLs and downloads the contents of each URL in parallel using Promises. (4)
+
+async function downloadUrlsInParallel(urls) {
+  if (!Array.isArray(urls)) {
+    throw new Error('Input must be an array of URLs');
+  }
+
+  try {
+    // Create an array of fetch promises
+    const downloadPromises = urls.map(async url => {
+      const response = await fetch(url);
+      
+      // Check if the request was successful
+      if (!response.ok) {
+        throw new Error(`Failed to download ${url}: ${response.status} ${response.statusText}`);
+      }
+      
+      // Get the content as text
+      const content = await response.text();
+      
+      return {
+        url,
+        content,
+        status: response.status
+      };
+    });
+    
+    // Wait for all promises to resolve in parallel
+    const results = await Promise.all(downloadPromises);
+    return results;
+  } catch (error) {
+    console.error('Error downloading URLs:', error);
+    throw error;
+  }
+}
+
+// Example usage:
+// downloadUrlsInParallel([
+//   'https://example.com',
+//   'https://example.org',
+//   'https://example.net'
+// ])
+//   .then(results => console.log('All downloads complete:', results))
+//   .catch(error => console.error('Download failed:', error));
+
+7. Structure of 'restaurants' collection:
+Write a MongoDB query to find the restaurants that achieved a score, more than 80 but less than 100.
+
+db.restaurants.find({
+  "grades.score": {
+    $gt: 80,
+    $lt: 100
+  }
+})
+
+This query will find all restaurant documents that have at least one grade with a score greater than 80 and less than 100.
+
+8. Write a MongoDB query to find the restaurants that have at least one grade with a score of less than 5 and that are located in the borough of Manhattan or Brooklyn, and their cuisine is not American. (4)
+
+db.restaurants.find({
+  $and: [
+    { "grades.score": { $lt: 5 } },
+    { "borough": { $in: ["Manhattan", "Brooklyn"] } },
+    { "cuisine": { $ne: "American" } }
+  ]
+})
+
+This query uses the $and operator to combine three conditions:
+1. At least one grade has a score less than 5
+2. The restaurant is in either Manhattan or Brooklyn (using $in operator)
+3. The cuisine is not American (using $ne operator - "not equal")
+
+
+
+
+
+-------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+Implementation Guide for Adding Employee Model & API Endpoints
+
+Based on the GitHub repository structure (https://github.com/anri-1151/nodejs-express-api-ibsu-class-2024), you'll need to modify/create these files:
+
+1. MODELS: Create a new file at models/Employee.js
+--------------------------------------------------------
+In this file, define the Employee schema with Mongoose:
+
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+const EmployeeSchema = new Schema({
+    firstName: {
+        type: String,
+        required: true
+    },
+    lastName: {
+        type: String,
+        required: true
+    },
+    pid: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    dateOfBirth: {
+        type: Date,
+        required: true
+    },
+    position: {
+        type: String,
+        required: true
+    },
+    salary: {
+        type: Number,
+        required: true
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
+    }
+});
+
+module.exports = mongoose.model('Employee', EmployeeSchema);
+
+
+2. CONTROLLERS: Create a new file at controllers/employeeController.js
+--------------------------------------------------------
+In this file, implement the business logic for all employee operations:
+
+const Employee = require('../models/Employee');
+
+// Get all employees
+exports.getAllEmployees = async (req, res) => {
+    try {
+        const employees = await Employee.find();
+        res.status(200).json(employees);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Get employee by ID
+exports.getEmployeeById = async (req, res) => {
+    try {
+        const employee = await Employee.findById(req.params.id);
+        if (!employee) {
+            return res.status(404).json({ message: 'Employee not found' });
+        }
+        res.status(200).json(employee);
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+// Create new employee
+exports.createEmployee = async (req, res) => {
+    try {
+        const employee = new Employee(req.body);
+        const newEmployee = await employee.save();
+        res.status(201).json(newEmployee);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// Update employee
+exports.updateEmployee = async (req, res) => {
+    try {
+        const updatedEmployee = await Employee.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+        if (!updatedEmployee) {
+            return res.status(404).json({ message: 'Employee not found' });
+        }
+        res.status(200).json(updatedEmployee);
+    } catch (error) {
+        res.status(400).json({ message: error.message });
+    }
+};
+
+// Search employees with pagination and filtering
+exports.searchEmployees = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+        const searchText = req.query.search || '';
+        
+        // Create search filter for firstName, lastName, or pid
+        const filter = searchText ? {
+            $or: [
+                { firstName: { $regex: searchText, $options: 'i' } },
+                { lastName: { $regex: searchText, $options: 'i' } },
+                { pid: { $regex: searchText, $options: 'i' } }
+            ]
+        } : {};
+        
+        // Execute query with pagination
+        const employees = await Employee.find(filter)
+            .skip(skip)
+            .limit(limit);
+        
+        // Get total count for pagination metadata
+        const total = await Employee.countDocuments(filter);
+        
+        res.status(200).json({
+            data: employees,
+            pagination: {
+                total,
+                page,
+                limit,
+                pages: Math.ceil(total / limit)
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+
+3. ROUTES: Create a new file at routes/employeeRoutes.js
+--------------------------------------------------------
+In this file, define the route endpoints that will map to controller methods:
+
+const express = require('express');
+const router = express.Router();
+const employeeController = require('../controllers/employeeController');
+
+// GET all employees
+router.get('/', employeeController.getAllEmployees);
+
+// GET employee by ID
+router.get('/:id', employeeController.getEmployeeById);
+
+// POST create new employee
+router.post('/', employeeController.createEmployee);
+
+// PUT update employee
+router.put('/:id', employeeController.updateEmployee);
+
+// GET search employees with pagination and filtering
+router.get('/search/employees', employeeController.searchEmployees);
+
+module.exports = router;
+
+
+4. APP.JS: Update the main app.js to include the new routes
+--------------------------------------------------------
+Find the section where routes are being registered and add:
+
+const employeeRoutes = require('./routes/employeeRoutes');
+app.use('/api/employees', employeeRoutes);
+
+
+IMPORTANT NOTES:
+
+1. Fix the search route order - Make sure the search route is defined before the /:id route in employeeRoutes.js to prevent conflicts:
+
+// The correct order should be:
+router.get('/search/employees', employeeController.searchEmployees);
+router.get('/:id', employeeController.getEmployeeById);
+
+2. Check MongoDB connection - Ensure the MongoDB connection is properly set up in the main app file.
+
+3. Validation - Consider adding more robust validation for the employee data before saving to the database.
+
+4. Error handling - Implement proper error handling for all API endpoints.
+
+5. Authentication - If the API requires authentication, make sure to add the necessary middleware to protect these routes.
+
+6. Testing - Test all endpoints using Postman or a similar tool after implementation.
+
+API ENDPOINTS SUMMARY:
+
+- GET /api/employees - Get all employees
+- GET /api/employees/:id - Get employee by ID
+- POST /api/employees - Create new employee
+- PUT /api/employees/:id - Update employee
+- GET /api/employees/search/employees?search=text&page=1&limit=10 - Search employees with pagination and filtering
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+1. Describe what is Callback in JS? (2)
+
+A callback in JavaScript is a function passed as an argument to another function that is intended to be executed after the completion of an operation or at a later time. Callbacks are a fundamental concept in JavaScript's asynchronous programming model.
+
+Key characteristics of callbacks:
+- They enable asynchronous operations in a single-threaded language
+- They allow functions to be executed after a specific task completes
+- They can be used to handle success or error cases in asynchronous operations
+- They form the basis for event handling in JavaScript
+
+Example of a callback:
+function fetchData(callback) {
+  // Simulate an API call
+  setTimeout(() => {
+    const data = { name: "John", age: 30 };
+    callback(data);
+  }, 1000);
+}
+
+fetchData(function(data) {
+  console.log("Data received:", data);
+});
+
+2. Describe event loop in NodeJS? (4)
+
+The event loop is the core mechanism that enables Node.js to perform non-blocking I/O operations despite JavaScript being single-threaded. It works by offloading operations to the system kernel whenever possible and handling the execution of callbacks when operations complete.
+
+Key components and phases of the Node.js event loop:
+
+1. Call Stack: Keeps track of function calls being executed. When a function finishes, it's popped off the stack.
+
+2. Callback Queue (Task Queue): Contains callbacks from completed asynchronous operations waiting to be executed.
+
+3. Microtask Queue: Has higher priority than the callback queue and contains promises and process.nextTick callbacks.
+
+4. Event Loop Phases:
+   - Timers: Executes callbacks scheduled by setTimeout() and setInterval()
+   - Pending callbacks: Executes I/O callbacks deferred to the next loop iteration
+   - Idle, prepare: Used internally by Node.js
+   - Poll: Retrieves new I/O events and executes their callbacks
+   - Check: Executes setImmediate() callbacks
+   - Close callbacks: Executes close event callbacks (e.g., socket.on('close', ...))
+
+5. Process:
+   - The event loop checks if the call stack is empty
+   - If empty, it processes the microtask queue first (promises, process.nextTick)
+   - Then it proceeds through the phases in order
+   - This cycle continues as long as there are callbacks to process
+
+The event loop allows Node.js to handle thousands of concurrent connections with a single thread, making it highly scalable and efficient for I/O-bound applications.
+
+3. Write the function which counts how many times each character is presented in the given text? (4)
+
+function countCharacters(text) {
+  // Initialize an empty object to store character counts
+  const charCount = {};
+  
+  // Handle empty or non-string inputs
+  if (!text || typeof text !== 'string') {
+    return charCount;
+  }
+  
+  // Iterate through each character in the string
+  for (let i = 0; i < text.length; i++) {
+    const char = text[i];
+    
+    // If character exists in charCount, increment its count
+    // Otherwise, initialize it to 1
+    charCount[char] = (charCount[char] || 0) + 1;
+  }
+  
+  return charCount;
+}
+
+// Example usage
+// const text = "hello world";
+// const result = countCharacters(text);
+// console.log(result);
+// Output: { h: 1, e: 1, l: 3, o: 2, ' ': 1, w: 1, r: 1, d: 1 }
+
+This function:
+1. Creates an empty object to store character counts
+2. Handles edge cases like empty or non-string inputs
+3. Iterates through each character of the input string
+4. Increments the count for each character in the object
+5. Returns the object containing each character and its occurrence count
+
+4. What is the output of the following code? (4)
+
+console.log("first");
+setTimeout(() => {
+    console.log("second");
+}, 0);
+console.log("third");
+
+Output:
+first
+third
+second
+
+Explanation:
+1. The code first executes `console.log("first")` which immediately outputs "first".
+2. It then encounters the `setTimeout` function, which schedules the callback function to run after 0 milliseconds. However, even with a delay of 0ms, the callback is placed in the event queue and won't execute until the call stack is empty.
+3. The code continues execution and runs `console.log("third")`, which outputs "third".
+4. Only after the main execution context is complete (the call stack is empty), does the event loop pick up the callback from the event queue and execute it, outputting "second".
+
+This demonstrates JavaScript's asynchronous nature and event loop mechanism. Despite the timeout being set to 0ms, the callback still executes after all synchronous code has completed.
+
+5. What will the code below output to the console and why? (4)
+
+for (var i = 0; i < 5; i++) {
+    setTimeout(function() { console.log(i); }, i * 1000);
+}
+
+Output:
+5 (after 0 seconds)
+5 (after 1 second)
+5 (after 2 seconds)
+5 (after 3 seconds)
+5 (after 4 seconds)
+
+Explanation:
+1. The loop runs 5 times, setting up 5 different timeouts with delays of 0, 1000, 2000, 3000, and 4000 milliseconds respectively.
+2. The variable `i` is declared with `var`, which means it has function scope, not block scope.
+3. By the time the first setTimeout callback executes (and all subsequent ones), the loop has already completed and the value of `i` is 5.
+4. Each callback references the same variable `i`, which has the final value of 5 when the loop terminates.
+5. Therefore, each timeout will print the value 5, just at different times.
+
+To fix this and get values 0,1,2,3,4 printed, you could:
+- Use `let` instead of `var` to create a block-scoped variable
+- Use an IIFE (Immediately Invoked Function Expression) to capture the value of `i` at each iteration
+
+6. Write a JavaScript function that fetches data from an API and retries the request a specified number of times if it fails (4)
+
+async function fetchWithRetry(url, options = {}, maxRetries = 3, delayMs = 1000) {
+  let lastError = null;
+  
+  // Try fetching maxRetries times
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      // Attempt to fetch data
+      const response = await fetch(url, options);
+      
+      // Check if response is okay
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status} ${response.statusText}`);
+      }
+      
+      // If successful, parse and return the data
+      return await response.json();
+    } catch (error) {
+      console.log(`Attempt ${attempt + 1} failed: ${error.message}`);
+      lastError = error;
+      
+      // If this isn't the last attempt, wait before retrying
+      if (attempt < maxRetries - 1) {
+        // Exponential backoff: wait longer for each retry
+        const waitTime = delayMs * Math.pow(2, attempt);
+        console.log(`Retrying in ${waitTime}ms...`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+  }
+  
+  // If all retries failed, throw the last error
+  throw new Error(`Failed after ${maxRetries} attempts: ${lastError.message}`);
+}
+
+// Example usage:
+// fetchWithRetry('https://api.example.com/data', {}, 3, 1000)
+//   .then(data => console.log('Success:', data))
+//   .catch(error => console.error('Error:', error));
+
+This function:
+1. Takes a URL to fetch from, request options, maximum number of retries, and delay between retries
+2. Uses async/await for cleaner asynchronous code
+3. Implements exponential backoff for retries (each retry waits progressively longer)
+4. Returns the data if successful
+5. Throws an error after all retries fail
+6. Includes informative logging about retry attempts
+
+7. Structure of 'restaurants' collection:
+Write a MongoDB query to find the restaurants which do not prepare any cuisine of 'American' and achieved a grade point 'A' not belongs to the borough Brooklyn. The document must be displayed according to the cuisine in descending order. (4)
+
+db.restaurants.find({
+  $and: [
+    { cuisine: { $ne: "American" } },
+    { "grades.grade": "A" },
+    { borough: { $ne: "Brooklyn" } }
+  ]
+}).sort({ cuisine: -1 })
+
+This query:
+1. Uses $and to combine multiple conditions:
+   - Cuisine is not "American" (using $ne operator)
+   - At least one grade with a grade of "A"
+   - Borough is not "Brooklyn"
+2. Uses sort({ cuisine: -1 }) to sort results by cuisine name in descending order
+
+8. Write a MongoDB query to find the restaurants that have at least one grade with a score of less than 5 and that are located in the borough of Manhattan or Brooklyn, and their cuisine is not American or Chinese. (4)
+
+db.restaurants.find({
+  $and: [
+    { "grades.score": { $lt: 5 } },
+    { borough: { $in: ["Manhattan", "Brooklyn"] } },
+    { cuisine: { $nin: ["American", "Chinese"] } }
+  ]
+})
+
+This query:
+1. Uses $and to combine multiple conditions:
+   - At least one grade has a score less than 5 (using $lt operator)
+   - Borough is either Manhattan OR Brooklyn (using $in operator)
+   - Cuisine is NOT American AND NOT Chinese (using $nin operator)
+
+9. Add to the given(https://github.com/anri-1151/nodejs-express-api-ibsu-class-2024) NodeJS Rest api project Taxi License model. Taxi License data consists from fields: firstName, lastName, pid, licenseActivationDate and service check list, which consists from service name, date and result, if this service was passed or not. Add Rest method for to retrieve all records, one record by id, add new record and update taxi license information methods. Add search method, which returns drivers with pagination and can filter drivers list with one search text which will be matched with firstName,lastName or pid fields (10)
+
+Below is a step-by-step implementation for adding the Taxi License functionality:
+
+1. MODEL: Create a new file at models/TaxiLicense.js
+
+const mongoose = require('mongoose');
+const Schema = mongoose.Schema;
+
+// Define the service check schema
+const ServiceCheckSchema = new Schema({
+  serviceName: {
+    type: String,
+    required: true
+  },
+  date: {
+    type: Date,
+    required: true
+  },
+  passed: {
+    type: Boolean,
+    required: true
+  }
+});
+
+// Define the main Taxi License schema
+const TaxiLicenseSchema = new Schema({
+  firstName: {
+    type: String,
+    required: true
+  },
+  lastName: {
+    type: String,
+    required: true
+  },
+  pid: {
+    type: String,
+    required: true,
+    unique: true
+  },
+  licenseActivationDate: {
+    type: Date,
+    required: true
+  },
+  serviceCheckList: [ServiceCheckSchema],
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model('TaxiLicense', TaxiLicenseSchema);
+
+2. CONTROLLER: Create a new file at controllers/taxiLicenseController.js
+
+const TaxiLicense = require('../models/TaxiLicense');
+
+// Get all taxi licenses
+exports.getAllLicenses = async (req, res) => {
+  try {
+    const licenses = await TaxiLicense.find();
+    res.status(200).json(licenses);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get taxi license by ID
+exports.getLicenseById = async (req, res) => {
+  try {
+    const license = await TaxiLicense.findById(req.params.id);
+    if (!license) {
+      return res.status(404).json({ message: 'Taxi license not found' });
+    }
+    res.status(200).json(license);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Create new taxi license
+exports.createLicense = async (req, res) => {
+  try {
+    // Check if driver with same PID already exists
+    const existingLicense = await TaxiLicense.findOne({ pid: req.body.pid });
+    if (existingLicense) {
+      return res.status(400).json({ message: 'Driver with this PID already exists' });
+    }
+    
+    const license = new TaxiLicense(req.body);
+    const newLicense = await license.save();
+    res.status(201).json(newLicense);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Update taxi license
+exports.updateLicense = async (req, res) => {
+  try {
+    const updatedLicense = await TaxiLicense.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true, runValidators: true }
+    );
+    if (!updatedLicense) {
+      return res.status(404).json({ message: 'Taxi license not found' });
+    }
+    res.status(200).json(updatedLicense);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// Search taxi licenses with pagination and filtering
+exports.searchLicenses = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+    const searchText = req.query.search || '';
+    
+    // Create search filter for firstName, lastName, or pid
+    const filter = searchText ? {
+      $or: [
+        { firstName: { $regex: searchText, $options: 'i' } },
+        { lastName: { $regex: searchText, $options: 'i' } },
+        { pid: { $regex: searchText, $options: 'i' } }
+      ]
+    } : {};
+    
+    // Execute query with pagination
+    const licenses = await TaxiLicense.find(filter)
+      .skip(skip)
+      .limit(limit);
+    
+    // Get total count for pagination metadata
+    const total = await TaxiLicense.countDocuments(filter);
+    
+    res.status(200).json({
+      data: licenses,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+3. ROUTES: Create a new file at routes/taxiLicenseRoutes.js
+
+const express = require('express');
+const router = express.Router();
+const taxiLicenseController = require('../controllers/taxiLicenseController');
+
+// Search route (must come BEFORE the :id route to avoid conflicts)
+router.get('/search', taxiLicenseController.searchLicenses);
+
+// GET all licenses
+router.get('/', taxiLicenseController.getAllLicenses);
+
+// GET license by ID
+router.get('/:id', taxiLicenseController.getLicenseById);
+
+// POST create new license
+router.post('/', taxiLicenseController.createLicense);
+
+// PUT update license
+router.put('/:id', taxiLicenseController.updateLicense);
+
+module.exports = router;
+
+4. APP.JS: Update the main app.js file to include the new routes
+
+Find where routes are being registered and add:
+
+const taxiLicenseRoutes = require('./routes/taxiLicenseRoutes');
+app.use('/api/taxi-licenses', taxiLicenseRoutes);
+
+IMPLEMENTATION NOTES:
+
+1. The TaxiLicense model includes:
+   - Basic driver info (firstName, lastName, pid)
+   - License activation date
+   - Service check list (array of services with name, date, and pass/fail status)
+
+2. API endpoints created:
+   - GET /api/taxi-licenses - Get all licenses
+   - GET /api/taxi-licenses/:id - Get license by ID
+   - POST /api/taxi-licenses - Create new license
+   - PUT /api/taxi-licenses/:id - Update license
+   - GET /api/taxi-licenses/search?search=text&page=1&limit=10 - Search with pagination
+
+3. Search functionality:
+   - Supports searching by firstName, lastName, or pid
+   - Includes case-insensitive matching
+   - Returns paginated results with metadata
+
+4. Input validation:
+   - Ensures required fields are provided
+   - Validates PID uniqueness
+   - Uses mongoose schema validation
+
+5. Error handling:
+   - Provides appropriate HTTP status codes
+   - Returns descriptive error messages
